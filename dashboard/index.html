@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Remittance Fraud Analytics - Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0f172a;--card:#1e293b;--muted:#94a3b8;--fg:#e2e8f0;--accent:#38bdf8;
+        --good:#4ade80;--bad:#f87171;--warn:#fbbf24;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:22px 28px;background:linear-gradient(90deg,#0ea5e9,#6366f1);color:#fff;}
+  header h1{margin:0;font-size:22px} header p{margin:6px 0 0;opacity:.9;font-size:13px}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px 24px 60px}
+  .banner{background:#422006;border:1px solid #a16207;color:#fde68a;padding:10px 14px;border-radius:8px;font-size:13px;margin:16px 0}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .cols2{grid-template-columns:1fr 1fr}
+  @media(max-width:800px){.cols2{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid #334155;border-radius:12px;padding:16px}
+  .card h3{margin:0 0 10px;font-size:14px;color:var(--accent);letter-spacing:.3px;text-transform:uppercase}
+  .kpi .v{font-size:26px;font-weight:700} .kpi .l{color:var(--muted);font-size:12px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #334155}
+  th{color:var(--muted);font-weight:600}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+  .ship{background:#064e3b;color:#6ee7b7}.noship{background:#7f1d1d;color:#fca5a5}
+  .sec{margin-top:26px} .muted{color:var(--muted);font-size:12px}
+  canvas{max-height:280px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Cross-Border Remittance Fraud Analytics</h1>
+  <p>Fraud-detection methodology on public card-fraud data, mapped to remittance risk (ATO, mules, stolen instruments, structuring).</p>
+</header>
+<div class="wrap">
+  <div class="banner" id="banner"></div>
+
+  <div class="grid kpis" id="kpis"></div>
+
+  <div class="sec grid cols2">
+    <div class="card"><h3>Model performance (out-of-time test)</h3><table id="perf"></table>
+      <p class="muted" id="opnote"></p></div>
+    <div class="card"><h3>Precision / Recall vs threshold</h3><canvas id="thrChart"></canvas></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card"><h3>Fraud rate by amount band</h3><canvas id="amtChart"></canvas></div>
+    <div class="card"><h3>Fraud rate by segment</h3><canvas id="segChart"></canvas></div>
+  </div>
+
+  <div class="sec grid cols2">
+    <div class="card"><h3>RCA - recall by fraud mode</h3><canvas id="rcaChart"></canvas>
+      <p class="muted" id="rcanote"></p></div>
+    <div class="card"><h3>Top fraud drivers</h3><canvas id="impChart"></canvas></div>
+  </div>
+
+  <div class="sec card"><h3>A/B test - step-up verification (simulated)</h3>
+    <div id="abbox"></div>
+  </div>
+
+  <p class="sec muted">Generated from live pipeline outputs (reports/*.json). See README for the honest data-provenance note.</p>
+</div>
+
+<script>
+const D = {"dq": {"n_rows": 284807, "n_cols": 45, "columns": ["Time", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18", "V19", "V20", "V21", "V22", "V23", "V24", "V25", "V26", "V27", "V28", "Amount", "card_id", "device_type", "channel", "corridor", "merchant_category", "account_age_days", "device_change", "corridor_new", "n_clicks_session", "session_duration_s", "txn_gap_s", "card_txn_rank", "txn_count_1h", "fraud_mode", "Class"], "n_fraud": 490, "n_legit": 284317, "fraud_rate": 0.0017204633313085704, "imbalance_ratio": 580.238775510204, "missing_by_column": {}, "total_missing_cells": 0, "duplicate_rows": 0, "amount_stats": {"min": 0.5, "median": 23.13, "mean": 43.295168377181746, "max": 1765.75}, "source": "synthetic"}, "eda": {"overall_fraud_rate": 0.0017204633313085704, "n_rows": 284807, "n_fraud": 490, "fraud_rate_by_amount_band": {"0-10": 0.0002396644697423607, "10-50": 0.0009986528589038745, "50-100": 0.0031013762357045937, "100-250": 0.008934707903780068, "250-500": 0.023492560689115115, "500-1k": 0.017059553349875932, "1k-5k": 0.0}, "fraud_rate_by_hour": {"0": 0.003267152550892184, "1": 0.0031486681984511954, "2": 0.004665761791652528, "3": 0.003565970453387672, "4": 0.0036138358286009293, "5": 0.0033003300330033004, "6": 0.0017536534446764092, "7": 0.0009246805648957633, "8": 0.0007520053475935829, "9": 0.0013403702772891012, "10": 0.0016033755274261602, "11": 0.0010080645161290322, "12": 0.0011808367071524967, "13": 0.0009226639825532629, "14": 0.0010145417653026716, "15": 0.0009307835505161618, "16": 0.0007635530669381522, "17": 0.001267962806424345, "18": 0.0011813349084465446, "19": 0.0012651821862348178, "20": 0.0005062009617818274, "21": 0.0013455554621142041, "22": 0.001190273762965482, "23": 0.0008314625426124553}, "fraud_rate_by_device_type": {"ios_app": {"fraud_rate": 0.0019050554006919834, "n": 71389, "n_fraud": 136}, "android_app": {"fraud_rate": 0.0017700841835312483, "n": 71748, "n_fraud": 127}, "web_mobile": {"fraud_rate": 0.0016630657266317945, "n": 70352, "n_fraud": 117}, "web_desktop": {"fraud_rate": 0.001542387616029614, "n": 71318, "n_fraud": 110}}, "fraud_rate_by_corridor": {"AU->PH": {"fraud_rate": 0.002311203559253481, "n": 34614, "n_fraud": 80}, "UK->NG": {"fraud_rate": 0.0018445543724322966, "n": 35781, "n_fraud": 66}, "US->GT": {"fraud_rate": 0.0017683465959328027, "n": 36192, "n_fraud": 64}, "CA->IN": {"fraud_rate": 0.001727262430626345, "n": 35316, "n_fraud": 61}, "US->NG": {"fraud_rate": 0.0016974621549421193, "n": 35936, "n_fraud": 61}, "US->PH": {"fraud_rate": 0.0015196285352469397, "n": 35535, "n_fraud": 54}, "US->MX": {"fraud_rate": 0.0014812744550027949, "n": 35780, "n_fraud": 53}, "US->IN": {"fraud_rate": 0.0014304546601968979, "n": 35653, "n_fraud": 51}}, "fraud_rate_by_merchant_category": {"bank_deposit": {"fraud_rate": 0.0027034618355452566, "n": 28482, "n_fraud": 77}, "cash_pickup": {"fraud_rate": 0.0017913642285501581, "n": 42984, "n_fraud": 77}, "bill_pay": {"fraud_rate": 0.001698157401623985, "n": 51232, "n_fraud": 87}, "airtime_topup": {"fraud_rate": 0.0015708524805401857, "n": 42652, "n_fraud": 67}, "p2p_transfer": {"fraud_rate": 0.0015235607791925128, "n": 119457, "n_fraud": 182}}, "fraud_rate_by_channel": {"app": {"fraud_rate": 0.0018099484269521588, "n": 143098, "n_fraud": 259}, "web": {"fraud_rate": 0.0016301011227233273, "n": 141709, "n_fraud": 231}}}, "metrics": {"cost_assumptions": {"false_positive_$": 4.0, "false_negative_mult_x_amount": 1.0}, "logreg": {"roc_auc": 0.9647443179798713, "pr_auc": 0.32191054692648435}, "hgb": {"roc_auc": 0.9704841936542932, "pr_auc": 0.4080887433651671}, "operating_points": {"cost_minimizing": {"threshold": 0.5036876412975007, "tp": 58, "fp": 455, "fn": 31, "tn": 84899, "precision": 0.11306042884990253, "recall": 0.651685393258427, "f1": 0.1926910299003322}, "f1_optimal": {"threshold": 0.878690738581204, "tp": 29, "fp": 22, "fn": 60, "tn": 85332, "precision": 0.5686274509803921, "recall": 0.3258426966292135, "f1": 0.41428571428571426}, "high_recall_0.90": {"threshold": 0.12538907950583258, "tp": 77, "fp": 3807, "fn": 12, "tn": 81547, "precision": 0.019824922760041195, "recall": 0.8651685393258427, "f1": 0.038761641077271584}}, "chosen_operating_point": "cost_minimizing", "primary_model": "hgb", "threshold_sweep": [{"threshold": 0.05, "tp": 81, "fp": 8978, "fn": 8, "tn": 76376, "precision": 0.008941384258748207, "recall": 0.9101123595505618, "f1": 0.01770878880629646}, {"threshold": 0.1, "tp": 78, "fp": 4796, "fn": 11, "tn": 80558, "precision": 0.01600328272466147, "recall": 0.8764044943820225, "f1": 0.031432601249244414}, {"threshold": 0.15, "tp": 76, "fp": 3110, "fn": 13, "tn": 82244, "precision": 0.023854362837413684, "recall": 0.8539325842696629, "f1": 0.04641221374045801}, {"threshold": 0.2, "tp": 71, "fp": 2193, "fn": 18, "tn": 83161, "precision": 0.03136042402826855, "recall": 0.797752808988764, "f1": 0.06034849128771781}, {"threshold": 0.25, "tp": 67, "fp": 1660, "fn": 22, "tn": 83694, "precision": 0.038795599305153444, "recall": 0.7528089887640449, "f1": 0.07378854625550661}, {"threshold": 0.3, "tp": 67, "fp": 1268, "fn": 22, "tn": 84086, "precision": 0.050187265917602995, "recall": 0.7528089887640449, "f1": 0.09410112359550561}, {"threshold": 0.35, "tp": 64, "fp": 985, "fn": 25, "tn": 84369, "precision": 0.061010486177311724, "recall": 0.7191011235955056, "f1": 0.11247803163444638}, {"threshold": 0.4, "tp": 62, "fp": 782, "fn": 27, "tn": 84572, "precision": 0.07345971563981042, "recall": 0.6966292134831461, "f1": 0.13290460878885313}, {"threshold": 0.45, "tp": 60, "fp": 609, "fn": 29, "tn": 84745, "precision": 0.08968609865470852, "recall": 0.6741573033707865, "f1": 0.15831134564643798}, {"threshold": 0.5, "tp": 59, "fp": 462, "fn": 30, "tn": 84892, "precision": 0.11324376199616124, "recall": 0.6629213483146067, "f1": 0.19344262295081965}, {"threshold": 0.55, "tp": 57, "fp": 360, "fn": 32, "tn": 84994, "precision": 0.1366906474820144, "recall": 0.6404494382022472, "f1": 0.22529644268774707}, {"threshold": 0.6, "tp": 54, "fp": 281, "fn": 35, "tn": 85073, "precision": 0.16119402985074627, "recall": 0.6067415730337079, "f1": 0.25471698113207547}, {"threshold": 0.65, "tp": 51, "fp": 213, "fn": 38, "tn": 85141, "precision": 0.19318181818181818, "recall": 0.5730337078651685, "f1": 0.2889518413597733}, {"threshold": 0.7, "tp": 45, "fp": 149, "fn": 44, "tn": 85205, "precision": 0.23195876288659795, "recall": 0.5056179775280899, "f1": 0.3180212014134276}, {"threshold": 0.75, "tp": 41, "fp": 93, "fn": 48, "tn": 85261, "precision": 0.30597014925373134, "recall": 0.4606741573033708, "f1": 0.36771300448430494}, {"threshold": 0.8, "tp": 37, "fp": 55, "fn": 52, "tn": 85299, "precision": 0.40217391304347827, "recall": 0.4157303370786517, "f1": 0.4088397790055249}, {"threshold": 0.85, "tp": 35, "fp": 31, "fn": 54, "tn": 85323, "precision": 0.5303030303030303, "recall": 0.39325842696629215, "f1": 0.45161290322580644}, {"threshold": 0.9, "tp": 25, "fp": 13, "fn": 64, "tn": 85341, "precision": 0.6578947368421053, "recall": 0.2808988764044944, "f1": 0.3937007874015748}, {"threshold": 0.95, "tp": 17, "fp": 2, "fn": 72, "tn": 85352, "precision": 0.8947368421052632, "recall": 0.19101123595505617, "f1": 0.3148148148148148}]}, "rca": {"threshold": 0.5036876412975007, "top_features_permutation": {"txn_count_1h": 0.2109858485615451, "device_change": 0.12058653016781908, "V12": 0.1025486402211852, "V3": 0.09006560527448194, "V4": 0.08888002779868849, "txn_gap_s": 0.08174983503962403, "V14": 0.05204727434674803, "corridor_new": 0.05060724818331221, "amount_per_click": 0.050400720392908015, "V5": 0.05007863397178549, "account_age_days": 0.02931829356851225, "V18": 0.027533640558419763, "V11": 0.024477952372580936, "V10": 0.018000232327835597, "amount_zscore_vs_card": 0.01642667158155046}, "shap_available": false, "shap_note": "SHAP not run (ModuleNotFoundError); permutation importance used instead.", "recall_by_fraud_mode": {"mule": {"n_fraud": 20, "n_missed": 12, "recall": 0.4, "avg_score": 0.38959418336404117}, "stolen_instrument": {"n_fraud": 28, "n_missed": 12, "recall": 0.5714285714285714, "avg_score": 0.5611886988813265}, "structuring": {"n_fraud": 16, "n_missed": 4, "recall": 0.75, "avg_score": 0.6990571695118218}, "account_takeover": {"n_fraud": 25, "n_missed": 3, "recall": 0.88, "avg_score": 0.7978664022014922}}, "worst_mode": "mule", "worst_mode_fn_profile_mean": {"Amount": 50.359166666666674, "amount_zscore_vs_card": 2.41471682284762, "txn_count_1h": 1.1666666666666667, "device_change": 0.0, "corridor_new": 0.08333333333333333, "near_threshold": 0.0, "account_age_days": 393.75}}, "ab": {"design": {"eligible_band": [0.3, 0.95], "n_eligible": 1316, "baseline_completed_fraud_rate": 0.037993920972644375, "assumed_fraud_block": 0.6, "assumed_legit_abandon": 0.05, "alpha": 0.05, "target_power": 0.8, "practical_relative_reduction_gate": 0.2}, "power": {"p1_control": 0.037993920972644375, "p2_treatment_expected": 0.015197568389057751, "n_required_per_arm": 781, "n_available_per_arm": 658, "adequately_powered": false}, "result": {"control_n": 650, "treatment_n": 666, "control_completed_fraud": 24, "treatment_completed_fraud": 13, "control_completed_fraud_rate": 0.036923076923076927, "treatment_completed_fraud_rate": 0.01951951951951952, "absolute_reduction": 0.017403557403557406, "relative_reduction": 0.47134634634634637, "z_stat": 1.9095174580360776, "p_value": 0.05619537180623513, "diff_95ci": [-0.0005005707193090937, 0.03530768552642391], "guardrail_legit_abandonment_rate": 0.0390625}, "decision": {"statistically_significant": false, "meets_practical_effect_gate": true, "ship": false, "rationale": "Do NOT ship on this evidence: not statistically significant. "}}, "split": {"n_train": 170884, "n_valid": 28480, "n_test": 85443, "n_features": 69, "seed": 42, "fraud_train": 357, "fraud_test": 89}};
+const pct = x => (x*100).toFixed(2)+'%';
+const f3 = x => (x==null?'-':Number(x).toFixed(3));
+
+// Banner
+const src = (D.dq.source||'synthetic');
+document.getElementById('banner').innerHTML =
+  '<b>Data source:</b> '+ (src==='real_ulb'?'REAL ULB creditcard.csv':'synthetic ULB/IEEE-style stand-in (offline build)') +
+  ' &nbsp;•&nbsp; all metrics below are computed from real model predictions on a held-out out-of-time test set.';
+
+// KPIs
+const m = D.metrics, op = (m.operating_points||{}).cost_minimizing||{};
+const kpis = [
+  ['Transactions', (D.dq.n_rows||0).toLocaleString()],
+  ['Fraud rate', pct(D.dq.fraud_rate||0)],
+  ['Imbalance', '1 : '+Math.round(D.dq.imbalance_ratio||0)],
+  ['ROC-AUC (GBT)', f3((m.hgb||{}).roc_auc)],
+  ['PR-AUC (GBT)', f3((m.hgb||{}).pr_auc)],
+  ['Recall @ op', op.recall!=null?pct(op.recall):'-'],
+  ['Precision @ op', op.precision!=null?pct(op.precision):'-'],
+];
+document.getElementById('kpis').innerHTML = kpis.map(k=>
+  `<div class="card kpi"><div class="v">${k[1]}</div><div class="l">${k[0]}</div></div>`).join('');
+
+// Performance table
+const rows = [['Logistic Regression','logreg'],['Gradient-Boosted Trees','hgb']];
+document.getElementById('perf').innerHTML =
+  '<tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th></tr>' +
+  rows.map(r=>`<tr><td>${r[0]}</td><td>${f3((m[r[1]]||{}).roc_auc)}</td><td>${f3((m[r[1]]||{}).pr_auc)}</td></tr>`).join('');
+document.getElementById('opnote').textContent =
+  `Chosen operating point (cost-minimizing, threshold ${f3(op.threshold)}): `+
+  `TP=${op.tp}, FP=${op.fp}, FN=${op.fn}, F1=${f3(op.f1)}.`;
+
+// Threshold chart
+const sw = m.threshold_sweep||[];
+new Chart(thrChart,{type:'line',data:{labels:sw.map(s=>s.threshold),
+  datasets:[
+    {label:'Precision',data:sw.map(s=>s.precision),borderColor:'#38bdf8'},
+    {label:'Recall',data:sw.map(s=>s.recall),borderColor:'#f87171'},
+    {label:'F1',data:sw.map(s=>s.f1),borderColor:'#4ade80'}]},
+  options:{plugins:{legend:{labels:{color:'#e2e8f0'}}},
+    scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}});
+
+// Amount band chart
+const ab = D.eda.fraud_rate_by_amount_band||{};
+new Chart(amtChart,{type:'bar',data:{labels:Object.keys(ab),
+  datasets:[{label:'Fraud rate',data:Object.values(ab).map(v=>v*100),backgroundColor:'#f87171'}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8'}},
+    y:{ticks:{color:'#94a3b8',callback:v=>v+'%'}}}}});
+
+// Segment chart (corridor)
+const seg = D.eda.fraud_rate_by_corridor || D.eda.fraud_rate_by_device_type || {};
+const segLabels = Object.keys(seg), segVals = segLabels.map(k=>seg[k].fraud_rate*100);
+new Chart(segChart,{type:'bar',data:{labels:segLabels,
+  datasets:[{label:'Fraud rate',data:segVals,backgroundColor:'#818cf8'}]},
+  options:{indexAxis:'y',plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#94a3b8',callback:v=>v+'%'}},y:{ticks:{color:'#94a3b8'}}}}});
+
+// RCA recall by mode
+const rc = D.rca.recall_by_fraud_mode||{};
+const rcL = Object.keys(rc);
+new Chart(rcaChart,{type:'bar',data:{labels:rcL,
+  datasets:[{label:'Recall',data:rcL.map(k=>rc[k].recall*100),backgroundColor:'#4ade80'}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8'}},
+    y:{ticks:{color:'#94a3b8',callback:v=>v+'%'}}}}});
+document.getElementById('rcanote').textContent = D.rca.worst_mode?
+  ('Hardest segment: '+D.rca.worst_mode+' - lowest recall, prioritize for rules/step-up.'):'';
+
+// Importance
+const imp = D.rca.top_features_permutation||{};
+const impK = Object.keys(imp).slice(0,10);
+new Chart(impChart,{type:'bar',data:{labels:impK,
+  datasets:[{label:'Importance',data:impK.map(k=>imp[k]),backgroundColor:'#38bdf8'}]},
+  options:{indexAxis:'y',plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}});
+
+// A/B box
+const r = (D.ab.result)||{}, dec=(D.ab.decision)||{}, pw=(D.ab.power)||{};
+document.getElementById('abbox').innerHTML =
+  `<table>
+    <tr><th>Arm</th><th>N</th><th>Completed fraud</th><th>Rate</th></tr>
+    <tr><td>Control</td><td>${(r.control_n||0).toLocaleString()}</td><td>${r.control_completed_fraud}</td><td>${pct(r.control_completed_fraud_rate||0)}</td></tr>
+    <tr><td>Step-up</td><td>${(r.treatment_n||0).toLocaleString()}</td><td>${r.treatment_completed_fraud}</td><td>${pct(r.treatment_completed_fraud_rate||0)}</td></tr>
+   </table>
+   <p style="margin-top:10px">Relative reduction <b>${((r.relative_reduction||0)*100).toFixed(1)}%</b>,
+   z=${f3(r.z_stat)}, p=${(r.p_value==null?'-':Number(r.p_value).toPrecision(3))}.
+   Powered per arm: ${pw.n_available_per_arm} vs required ${pw.n_required_per_arm} (${pw.adequately_powered?'OK':'underpowered'}).</p>
+   <p>Decision: <span class="pill ${dec.ship?'ship':'noship'}">${dec.ship?'SHIP':'DO NOT SHIP'}</span>
+   <span class="muted"> ${dec.rationale||''}</span></p>`;
+</script>
+</body>
+</html>

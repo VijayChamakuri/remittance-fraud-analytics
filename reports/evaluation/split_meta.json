@@ -1,0 +1,9 @@
+{
+  "n_train": 170884,
+  "n_valid": 28480,
+  "n_test": 85443,
+  "n_features": 69,
+  "seed": 42,
+  "fraud_train": 357,
+  "fraud_test": 89
+}

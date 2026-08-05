@@ -1,0 +1,13 @@
+numpy>=1.24
+pandas>=2.0
+pyarrow>=12.0
+scikit-learn>=1.7
+scipy>=1.10
+matplotlib>=3.7
+seaborn>=0.12
+joblib>=1.3
+# --- optional (pipeline degrades gracefully if absent) ---
+shap>=0.44          ; python_version >= "3.9"   # richer RCA explanations
+streamlit>=1.30                                   # interactive dashboard alt
+kagglehub>=0.2                                    # to download the REAL dataset
+kaggle>=1.6                                        # alt real-data download path

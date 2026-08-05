@@ -1,0 +1,58 @@
+{
+  "threshold": 0.5036876412975007,
+  "top_features_permutation": {
+    "txn_count_1h": 0.2109858485615451,
+    "device_change": 0.12058653016781908,
+    "V12": 0.1025486402211852,
+    "V3": 0.09006560527448194,
+    "V4": 0.08888002779868849,
+    "txn_gap_s": 0.08174983503962403,
+    "V14": 0.05204727434674803,
+    "corridor_new": 0.05060724818331221,
+    "amount_per_click": 0.050400720392908015,
+    "V5": 0.05007863397178549,
+    "account_age_days": 0.02931829356851225,
+    "V18": 0.027533640558419763,
+    "V11": 0.024477952372580936,
+    "V10": 0.018000232327835597,
+    "amount_zscore_vs_card": 0.01642667158155046
+  },
+  "shap_available": false,
+  "shap_note": "SHAP not run (ModuleNotFoundError); permutation importance used instead.",
+  "recall_by_fraud_mode": {
+    "mule": {
+      "n_fraud": 20,
+      "n_missed": 12,
+      "recall": 0.4,
+      "avg_score": 0.38959418336404117
+    },
+    "stolen_instrument": {
+      "n_fraud": 28,
+      "n_missed": 12,
+      "recall": 0.5714285714285714,
+      "avg_score": 0.5611886988813265
+    },
+    "structuring": {
+      "n_fraud": 16,
+      "n_missed": 4,
+      "recall": 0.75,
+      "avg_score": 0.6990571695118218
+    },
+    "account_takeover": {
+      "n_fraud": 25,
+      "n_missed": 3,
+      "recall": 0.88,
+      "avg_score": 0.7978664022014922
+    }
+  },
+  "worst_mode": "mule",
+  "worst_mode_fn_profile_mean": {
+    "Amount": 50.359166666666674,
+    "amount_zscore_vs_card": 2.41471682284762,
+    "txn_count_1h": 1.1666666666666667,
+    "device_change": 0.0,
+    "corridor_new": 0.08333333333333333,
+    "near_threshold": 0.0,
+    "account_age_days": 393.75
+  }
+}

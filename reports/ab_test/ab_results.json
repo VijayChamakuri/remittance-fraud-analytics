@@ -1,0 +1,45 @@
+{
+  "design": {
+    "eligible_band": [
+      0.3,
+      0.95
+    ],
+    "n_eligible": 1316,
+    "baseline_completed_fraud_rate": 0.037993920972644375,
+    "assumed_fraud_block": 0.6,
+    "assumed_legit_abandon": 0.05,
+    "alpha": 0.05,
+    "target_power": 0.8,
+    "practical_relative_reduction_gate": 0.2
+  },
+  "power": {
+    "p1_control": 0.037993920972644375,
+    "p2_treatment_expected": 0.015197568389057751,
+    "n_required_per_arm": 781,
+    "n_available_per_arm": 658,
+    "adequately_powered": false
+  },
+  "result": {
+    "control_n": 650,
+    "treatment_n": 666,
+    "control_completed_fraud": 24,
+    "treatment_completed_fraud": 13,
+    "control_completed_fraud_rate": 0.036923076923076927,
+    "treatment_completed_fraud_rate": 0.01951951951951952,
+    "absolute_reduction": 0.017403557403557406,
+    "relative_reduction": 0.47134634634634637,
+    "z_stat": 1.9095174580360776,
+    "p_value": 0.05619537180623513,
+    "diff_95ci": [
+      -0.0005005707193090937,
+      0.03530768552642391
+    ],
+    "guardrail_legit_abandonment_rate": 0.0390625
+  },
+  "decision": {
+    "statistically_significant": false,
+    "meets_practical_effect_gate": true,
+    "ship": false,
+    "rationale": "Do NOT ship on this evidence: not statistically significant. "
+  }
+}
