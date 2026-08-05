@@ -46,7 +46,8 @@ def main():
     run("rca.py")
     run("ab_test.py")
     run("build_dashboard.py")
-    print("\nDONE. Open dashboard/index.html and see reports/ for all outputs.")
+    run("build_site.py")
+    print("\nDONE. Open dashboard/index.html (or docs/index.html) and see reports/ for all outputs.")
 
 
 if __name__ == "__main__":

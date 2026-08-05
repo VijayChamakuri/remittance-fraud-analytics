@@ -58,8 +58,14 @@ def main():
     yva = np.array(P["valid"]["y"]); yte = np.array(P["test"]["y"])
     va_amt = P["valid"].get("Amount"); te_amt = np.array(P["test"].get("Amount") or [1] * len(yte), float)
 
-    report = {"cost_assumptions": {"false_positive_$": COST_FALSE_POSITIVE,
-                                   "false_negative_mult_x_amount": COST_FALSE_NEGATIVE_MULT}}
+    avg_fraud_amt = float(te_amt[yte == 1].mean()) if (yte == 1).any() else 0.0
+    implied_ratio = avg_fraud_amt * COST_FALSE_NEGATIVE_MULT / COST_FALSE_POSITIVE
+    report = {"cost_assumptions": {
+        "false_positive_$": COST_FALSE_POSITIVE,
+        "false_negative_mult_x_amount": COST_FALSE_NEGATIVE_MULT,
+        "avg_fraud_amount_$": round(avg_fraud_amt, 2),
+        "implied_cost_ratio_missed_fraud_to_false_positive": round(implied_ratio, 1),
+    }}
     models = {"logreg": "Logistic Regression", "hgb": "Gradient-Boosted Trees"}
 
     # ---- Headline AUCs (out-of-time test) ----------------------------------

@@ -1,7 +1,9 @@
 {
   "cost_assumptions": {
     "false_positive_$": 4.0,
-    "false_negative_mult_x_amount": 1.0
+    "false_negative_mult_x_amount": 1.0,
+    "avg_fraud_amount_$": 161.29,
+    "implied_cost_ratio_missed_fraud_to_false_positive": 40.3
   },
   "logreg": {
     "roc_auc": 0.9647443179798713,
