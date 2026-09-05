@@ -1,6 +1,6 @@
 # Cross-Border Remittance Fraud Analytics
 
-**End-to-end fraud detection: feature engineering → a gradient-boosted model with out-of-time evaluation → root-cause analysis → a power-gated A/B test — mapped to a cross-border remittance context.**
+**End-to-end fraud detection: feature engineering → a gradient-boosted model with out-of-time evaluation → root-cause analysis → a power-gated A/B test - mapped to a cross-border remittance context.**
 
 ### ▶ [**Live demo & dashboard**](https://vijaychamakuri.github.io/remittance-fraud-analytics/) · [Executive summary](reports/executive_summary.md) · [RCA](reports/rca/rca_findings.md) · [A/B test](reports/ab_test/ab_results.md)
 
@@ -25,7 +25,7 @@ Fraud is **0.17% of volume (1 : 580)**, so PR-AUC and recall matter far more tha
 | Balanced (F1-optimal) | 0.88 | **57%** | 33% | analyst review capacity is the constraint |
 | Wide net | 0.13 | 2% | 87% | backstop behind other checks |
 
-**Why 0.50 is the defensible default (cost rationale):** a missed fraud costs ~the transaction value (**avg ≈ $161** in this data) while a false positive costs ~**$4** of review/step-up friction — an implied **≈ 40 : 1** cost ratio (measured, in [`metrics.json`](reports/evaluation/metrics.json)). At 40:1 it is rational to accept ~40 false alarms to stop one fraud, which is exactly why the cost-minimizing threshold lands at high recall. Change the two cost constants in [`src/config.py`](src/config.py) and the chosen point moves accordingly.
+**Why 0.50 is the defensible default (cost rationale):** a missed fraud costs ~the transaction value (**avg ≈ $161** in this data) while a false positive costs ~**$4** of review/step-up friction - an implied **≈ 40 : 1** cost ratio (measured, in [`metrics.json`](reports/evaluation/metrics.json)). At 40:1 it is rational to accept ~40 false alarms to stop one fraud, which is exactly why the cost-minimizing threshold lands at high recall. Change the two cost constants in [`src/config.py`](src/config.py) and the chosen point moves accordingly.
 
 ### Live dashboard (fraud KPIs · model performance · RCA · A/B)
 [![dashboard](reports/dashboard_preview.png)](https://vijaychamakuri.github.io/remittance-fraud-analytics/dashboard.html)
@@ -40,7 +40,7 @@ Fraud is **0.17% of volume (1 : 580)**, so PR-AUC and recall matter far more tha
 
 ## Data & honesty (short version)
 
-This demonstrates fraud-detection **methodology** on **public card-fraud data** (ULB / IEEE-CIS style), mapped onto a remittance context (account takeover, mules, stolen instruments, structuring). It is **not real Remitly data.** Because the build ran offline, the committed results use a **deterministic synthetic dataset** that reproduces the real ULB schema and 0.17% imbalance; the signal was set from plausible priors and **not tuned to a target score** (hence an honest 0.97 AUC, not a fake 0.99). The pipeline runs **unchanged on the real Kaggle dataset** via `python run_pipeline.py --real`. → **Full provenance, mapping, and limitations: [DATA.md](DATA.md).**
+This demonstrates fraud-detection **methodology** on a deterministic synthetic dataset with a ULB-style schema and 0.17% class imbalance, mapped onto a remittance context (account takeover, mules, stolen instruments, structuring). It is **not real Remitly data or measured remittance behavior.** The generator was iteratively adjusted after an early near-separable version to create more overlap and a useful demonstration benchmark. The reported 0.97 ROC-AUC and 0.41 PR-AUC are therefore synthetic benchmark results, not evidence of production performance. The pipeline also accepts the real public ULB dataset via `python run_pipeline.py --real`, but that path has fewer entity features and is not represented by the committed headline metrics. See [DATA.md](DATA.md) for provenance and limitations.
 
 ---
 
@@ -48,23 +48,32 @@ This demonstrates fraud-detection **methodology** on **public card-fraud data** 
 
 ```bash
 pip install -r requirements.txt      # or: make install
-python run_pipeline.py               # or: make run  — regenerates data + runs everything (~25s)
+python run_pipeline.py               # or: make run  - regenerates data + runs everything (~25s)
 open dashboard/index.html            # static dashboard, no server needed
 ```
 
 One command regenerates the deterministic dataset (seed = 42) and runs every stage. Interactive alternative: `streamlit run dashboard/app.py`. Run on the real ULB data: see [DATA.md](DATA.md).
 
+## Verification
+
+```bash
+python -m unittest discover -s tests -p "test_*.py" -v
+python run_pipeline.py --n 30000
+```
+
+The tests verify deterministic synthetic generation, chronological and disjoint data splits, exclusion of current transactions from per-card history, and target exclusion from model features. GitHub Actions runs the tests plus a reduced-size end-to-end smoke pipeline. The committed headline metrics still come from the default 284,807-row synthetic run.
+
 ## What's inside (the pipeline)
 
-1. **Ingest + clean** — schema, missing-value handling, class-imbalance report.
-2. **EDA** — fraud rate by amount band, time-of-day, device, corridor, merchant category.
-3. **Feature engineering** — velocity (1h/24h counts, inter-txn gap), amount anomaly vs. the card's own history, entity aggregates, behavioral/clickstream features, new-device/new-corridor flags — each documented in [`feature_dictionary.md`](reports/eda/feature_dictionary.md).
-4. **Model** — Logistic Regression baseline + Gradient-Boosted Trees, imbalance handled with class weighting (chosen over SMOTE: no synthetic rows, leakage-free across the time split).
-5. **Evaluation** — precision/recall/F1, ROC-AUC, PR-AUC, confusion matrix, threshold sweep, out-of-time holdout.
-6. **Root-cause analysis** — permutation importance (+ optional SHAP) and false-negative decomposition by fraud mode.
-7. **A/B test** — step-up verification: hypothesis, power/sample-size, two-proportion z-test, effect-size-gated decision.
-8. **Monitoring** — drift (PSI), precision/recall over time, friction guardrails ([note](reports/monitoring_note.md) + [SQL](sql/04_model_monitoring.sql)).
-9. **Dashboard + GitHub Pages site** — static HTML, Streamlit, and a published results page.
+1. **Ingest + clean** - schema, missing-value handling, class-imbalance report.
+2. **EDA** - fraud rate by amount band, time-of-day, device, corridor, merchant category.
+3. **Feature engineering** - velocity (1h/24h counts, inter-txn gap), amount anomaly vs. the card's own history, entity aggregates, behavioral/clickstream features, new-device/new-corridor flags - each documented in [`feature_dictionary.md`](reports/eda/feature_dictionary.md).
+4. **Model** - Logistic Regression baseline + Gradient-Boosted Trees, imbalance handled with class weighting (chosen over SMOTE: no synthetic rows, leakage-free across the time split).
+5. **Evaluation** - precision/recall/F1, ROC-AUC, PR-AUC, confusion matrix, threshold sweep, out-of-time holdout.
+6. **Root-cause analysis** - permutation importance (+ optional SHAP) and false-negative decomposition by fraud mode.
+7. **A/B test** - step-up verification: hypothesis, power/sample-size, two-proportion z-test, effect-size-gated decision.
+8. **Monitoring** - drift (PSI), precision/recall over time, friction guardrails ([note](reports/monitoring_note.md) + [SQL](sql/04_model_monitoring.sql)).
+9. **Dashboard + GitHub Pages site** - static HTML, Streamlit, and a published results page.
 
 ## Repo structure
 

@@ -24,8 +24,10 @@ The four fraud "modes" are engineered to map onto cross-border remittance risks:
   3. mule               -> mule account: brand-new account, cash-out pattern
   4. structuring        -> many just-under-threshold sends to evade limits
 
-IMPORTANT ON HONESTY: signal strengths below are fixed to *plausible* priors and
-were NOT tuned to hit a target AUC. Whatever the model achieves is reported as-is.
+IMPORTANT ON HONESTY: signal strengths below are fixed for reproducibility, but
+they were iteratively adjusted after an early near-separable version to create
+more overlap and a more useful demonstration benchmark. They were not estimated
+from remittance outcomes. Whatever the current model achieves is reported as-is.
 To reproduce on the REAL ULB dataset instead, run `python src/download_data.py`
 (needs a Kaggle API token); the entire downstream pipeline is column-compatible.
 """
@@ -202,8 +204,8 @@ def generate(n: int = N_DEFAULT, seed: int = RNG_SEED) -> pd.DataFrame:
     # ---- V1..V28: anonymized PCA-style signals ------------------------------
     # Legit ~ N(0,1). Fraud gets MODEST class-conditional mean shifts on a subset
     # of components. Effect sizes are deliberately small with heavy overlap and
-    # substantial label noise, so the model is good-but-imperfect (realistic),
-    # NOT separable. These are FIXED priors, not tuned to a target metric.
+    # substantial label noise, so the benchmark is not separable. These fixed
+    # values are demonstration assumptions, not estimates from remittance data.
     V = rng.normal(0, 1, size=(n, 28))
     shift = np.zeros(28)
     informative = {2: -0.95, 3: -0.8, 4: 0.85, 9: -0.7, 10: -0.9, 11: 0.8,

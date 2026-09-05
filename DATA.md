@@ -2,7 +2,7 @@
 
 This project demonstrates fraud-detection **methodology** on **public card-fraud
 data**, mapped onto a **cross-border remittance** context. This page is the full,
-unabridged provenance note — kept out of the README so results lead, but never
+unabridged provenance note - kept out of the README so results lead, but never
 hidden. The honesty here is a feature, not a disclaimer.
 
 ## What the data is (and is not)
@@ -10,9 +10,9 @@ hidden. The honesty here is a feature, not a disclaimer.
 * **It is card-fraud data, not remittance data, and it is not real Remitly data.**
   Nothing in this repo uses or implies access to any Remitly system.
 * The pipeline is built for two real public datasets:
-  * **ULB Credit Card Fraud** (`mlg-ulb/creditcardfraud`) — 284,807 transactions,
+  * **ULB Credit Card Fraud** (`mlg-ulb/creditcardfraud`) - 284,807 transactions,
     492 fraud (0.172%), columns `Time, V1..V28, Amount, Class`.
-  * **IEEE-CIS Fraud Detection** — richer entity/identity fields.
+  * **IEEE-CIS Fraud Detection** - richer entity/identity fields.
 * **This repo was built in an offline sandbox** (no Kaggle/GitHub network), so the
   committed results were produced on a **deterministic synthetic dataset** that
   reproduces:
@@ -28,12 +28,12 @@ hidden. The honesty here is a feature, not a disclaimer.
 
 * **No number in this repo is hand-typed.** Every metric is computed by the model
   on the data and written to JSON by the pipeline (`reports/**/**.json`).
-* The synthetic signal strengths are **fixed plausible priors, not tuned to hit a
-  target score.** An early version produced an unrealistic ROC-AUC ≈ 1.0; the
-  generator was deliberately made *harder* (weaker class-conditional shifts, more
-  label noise, heavy legit/fraud overlap, hard negatives) until the model landed
-  at a believable **ROC-AUC ≈ 0.97 / PR-AUC ≈ 0.41** — an honest, good-but-
-  imperfect result. Honest 0.85 beats a fake 0.99.
+* The synthetic signal strengths are fixed for reproducibility, but they were
+  iteratively adjusted after an early version produced a near-perfect ROC-AUC.
+  Effects were weakened and overlap and label noise were added to create a more
+  useful demonstration benchmark. The resulting **ROC-AUC ≈ 0.97 / PR-AUC
+  ≈ 0.41** describes this synthetic design only. It is not an estimate of
+  performance on remittance transactions or the real ULB dataset.
 * Evaluation uses a **strict out-of-time split** (train on the earliest 60% of the
   timeline, tune on the next 10%, test on the final 30%), never random shuffling,
   so there is no temporal leakage. Entity aggregates use **only prior
@@ -74,7 +74,7 @@ end-to-end and produces 34 features instead of 69).
 
 ## Known limitations
 
-* Absolute metric values will differ on the real ULB/IEEE data — the **code is
+* Absolute metric values will differ on the real ULB/IEEE data - the **code is
   identical**, only the data changes.
 * SHAP is optional; if it is not installed the RCA falls back to permutation
   importance (what the committed run used). Install `shap` for per-transaction
